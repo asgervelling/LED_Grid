@@ -8,6 +8,8 @@
 #define DISPLAY_WIDTH 320
 #define DISPLAY_HEIGHT 640
 
+
+
 void load_program(State *state)
 {
     state->square.x = 0;
@@ -22,6 +24,8 @@ void load_program(State *state)
     // Initialize 512 "LEDs"
     int LED_ID = 0;
     long y = 0;
+    // An LED is black by default
+    int default_rgba = 0;
     for (int row = 0; row < 32; ++row)
     {
         long x = 0;
@@ -32,17 +36,26 @@ void load_program(State *state)
             state->LEDs[LED_ID].w = state->square.w;
             state->LEDs[LED_ID].h = state->square.h;
 
+            // Color
+            state->LEDs[LED_ID].r = default_rgba;
+            state->LEDs[LED_ID].g = default_rgba;
+            state->LEDs[LED_ID].b = default_rgba;
+            state->LEDs[LED_ID].a = default_rgba;
+
             LED_ID += 1;
             x += state->square.w;
         }
         y += state->square.h;
     }
 
-    printf("LED 0's location: %d, %d", state->LEDs[0].x, state->LEDs[0].y);
+    // Initialize animation helper
+    state->animator.current_frame = 1;
 }
 
 int listen_for_events(SDL_Window *window, State *state, float dt)
 {
+    void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
+
     /* Listen for events. Return done = 1 if user quits program, done = 0 if not. */
     SDL_Event event;
     int done = 0;
@@ -71,6 +84,10 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
                         case SDLK_ESCAPE:
                             done = 1;
                         break;
+                        case SDLK_p:
+                            set_rgba(201, 153, 98, 255, 255, &state);
+                            set_color_transition(204, 10, 255, 255, 255, 255, &state);
+                        break;
                     }
                 }
             break;
@@ -86,9 +103,8 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
 
 void process(State *state, float dt)
 {
-    void animate_linear_function(float a, float x, float b, float dt);
-
-    animate_linear_function(1, 2, 3, dt);
+    void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
+    set_rgba(201, 153, 98, 255, 255, &state);
 }
 
 void render(SDL_Renderer *renderer, State *state)
@@ -98,35 +114,69 @@ void render(SDL_Renderer *renderer, State *state)
     SDL_RenderClear(renderer);
 
     // Draw 512 LEDs
-    int g = 100;
-    SDL_SetRenderDrawColor(renderer, 255, g, 255, 255);
-
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 397; ++i)
     {
+        SDL_SetRenderDrawColor(renderer, state->LEDs[i].r, state->LEDs[i].g, state->LEDs[i].b, state->LEDs[i].a);
         SDL_Rect LED_rect = {state->LEDs[i].x,
                              state->LEDs[i].y,
-                             state->LEDs[i].x,
+                             state->LEDs[i].w,
                              state->LEDs[i].h};
         SDL_RenderFillRect(renderer, &LED_rect);
-
-        /*
-        printf("LED %d:\n"
-               "x: %d, y: %d, w: %d, h: %d\n\n",
-               i,
-               state->LEDs[i].x,
-               state->LEDs[i].y,
-               state->LEDs[i].w,
-               state->LEDs[i].h);
-        */
-
     }
-
-    printf("LED 0: %d, %d %d %d\n", state->LEDs[0].x, state->LEDs[0].y, state->LEDs[0].w, state->LEDs[0].h);
-    printf("LED 16: %d, %d %d %d\n", state->LEDs[16].x, state->LEDs[16].y, state->LEDs[16].w, state->LEDs[16].h);
 
     // Present everything
     SDL_RenderPresent(renderer);
 }
+
+
+/*************
+Animation
+*************/
+
+void animate_linear_function(float a, float x, float b, float dt)
+{
+    return;
+}
+
+void set_rgba(int LED_number, int r, int g, int b, int a, State *state)
+{
+    // Set the r, g, b and a of a single LED
+    state->LEDs[LED_number].r = r;
+    state->LEDs[LED_number].g = g;
+    state->LEDs[LED_number].b = b;
+    state->LEDs[LED_number].a = a;
+}
+
+void set_color_transition(int LED_number,
+                          int frames,
+                          int target_r, int target_g, int target_b, int target_a,
+                          State *state)
+{
+    // Work on this later. Makes more sense to make a GUI now.
+    printf("Frame %d/%d\n", state->animator.current_frame, frames);
+    if (state->animator.current_frame >= frames)
+    {
+        // Animation is over
+        state->animator.current_frame = 1;
+        return;
+    }
+
+    // create a smooth color transition lasting x frames
+    int r_change = (int)floor(fabs(state->LEDs[LED_number].r - target_r) / state->animator.current_frame);
+    int g_change = (int)floor(fabs(state->LEDs[LED_number].g - target_g) / state->animator.current_frame);
+    int b_change = (int)floor(fabs(state->LEDs[LED_number].b - target_b) / state->animator.current_frame);
+    int a_change = (int)floor(fabs(state->LEDs[LED_number].a - target_a) / state->animator.current_frame);
+    printf("rgba changes:\n"
+           "%d | %d | %d | %d\n", r_change, g_change, b_change, a_change);
+
+
+    set_rgba(LED_number, r_change, g_change, b_change, a_change, &state);
+
+    // Set animation frame
+    state->animator.current_frame += 1;
+}
+
+
 
 int main(int argc, char* argv[])
 {
