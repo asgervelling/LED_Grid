@@ -1,6 +1,8 @@
+#include "SDL.h"
+
 typedef struct
 {
-    int x, y, w, h;
+    float x, y, w, h;
 } Square;
 
 typedef struct
@@ -9,7 +11,7 @@ typedef struct
     // laid out in a 16x32 pattern.
     // When testing on the computer, an LED is represented by a square.
 
-    int x, y, w, h;
+    float x, y, w, h;
     int r, g, b, a;
 } LED;
 
