@@ -3,26 +3,29 @@
 #include <math.h>
 #include <time.h>
 
-#include "sdl.h"
+#include "SDL.h"
 #include "headers/structs.h"
-#include "headers/animation.h"
+#include "headers/file_io.h"
 
 #define DISPLAY_WIDTH 320
 #define DISPLAY_HEIGHT 640
 
-
-
 void load_program(State *state)
 {
-    state->square.x = 0;
-    state->square.y = 0;
-    state->square.w = 1 * DISPLAY_WIDTH / 16;
-    state->square.h = 1 * DISPLAY_HEIGHT / 32;
+    void init_square(State *state);
+    void init_LEDs(State *state);
+    void init_animation(State *state);
+    void init_GUI(State *state);
 
-    printf("Square width: %.0f, height: %.0f\n",
-           state->square.w,
-           state->square.h);
+    init_square(state);
+    init_LEDs(state);
+    init_animation(state);
+    init_GUI(state);
+}
 
+// Just some initializing functions
+void init_LEDs(State *state)
+{
     // Initialize 512 "LEDs"
     int LED_ID = 0;
     float y = 0;
@@ -49,15 +52,40 @@ void load_program(State *state)
         }
         y += state->square.h;
     }
-
-    // Initialize animation helper
-    state->animator.current_frame = 1;
 }
 
+void init_animation(State *state)
+{
+    // Initialize animation helper
+    state->animation.current_frame = 0;
+}
+
+void init_square(State *state)
+{
+    state->square.x = 0;
+    state->square.y = 0;
+    state->square.w = 1 * DISPLAY_WIDTH / 16;
+    state->square.h = 1 * DISPLAY_HEIGHT / 32;
+}
+
+void init_GUI(State *state)
+{
+
+    SDL_Surface* IMG_Load(const char *file);
+
+    // Button image
+    SDL_Surface *surface = IMG_Load("assets/GUI/button_randomize.png");
+    state->GUI.randomize_button.texture = SDL_CreateTextureFromSurface(state->renderer, surface);
+    SDL_FreeSurface(surface);
+
+    // Button rect
+    state->GUI.x = 22;
+    printf("x: %d\n", state->GUI.x);
+
+}
 int listen_for_events(SDL_Window *window, State *state, float dt)
 {
-    void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
-    void set_rgba_random(int LED_number, State* state);
+    void set_rgba_random_all_LEDs(State *state);
 
     /* Listen for events. Return done = 1 if user quits program, done = 0 if not. */
     SDL_Event event;
@@ -88,7 +116,7 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
                             done = 1;
                         break;
                         case SDLK_p:
-                            set_rgba_random(201, state);
+                            set_rgba_random_all_LEDs(state);
                         break;
                     }
                 }
@@ -129,9 +157,8 @@ void render(SDL_Renderer *renderer, State *state)
     SDL_RenderPresent(renderer);
 }
 
-
 /*************
-Animation
+Graphics
 *************/
 
 void set_rgba(int LED_number, int r, int g, int b, int a, State *state)
@@ -141,8 +168,6 @@ void set_rgba(int LED_number, int r, int g, int b, int a, State *state)
     state->LEDs[LED_number].g = g;
     state->LEDs[LED_number].b = b;
     state->LEDs[LED_number].a = a;
-
-    printf("RGBA of LED %d: %d, %d, %d, %d\n", LED_number, r, g, b, a);
 }
 
 void set_rgba_random(int LED_number, State *state)
@@ -150,14 +175,22 @@ void set_rgba_random(int LED_number, State *state)
     void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
 
     // Get random rgba values
-    int rand_r = 255;
-    int rand_g = 255;
-    int rand_b = 255;
-    int rand_a = 255;
+    int rand_r = rand() % 256;
+    int rand_g = rand() % 256;
+    int rand_b = rand() % 256;
+    int rand_a = rand() % 256;
 
     // Set the chosen LED's color to those values
     set_rgba(LED_number, rand_r, rand_g, rand_b, rand_a, state);
-    printf("set_rgba_random(%d, %d, %d, %d, %d, state)\n", LED_number, rand_r, rand_g, rand_b, rand_a);
+}
+
+void set_rgba_random_all_LEDs(State* state)
+{
+    void set_rgba_random(int LED_number, State* state);
+    for (int i = 0; i < 512; ++i)
+    {
+        set_rgba_random(i, state);
+    }
 }
 
 int main(int argc, char* argv[])
@@ -167,6 +200,8 @@ int main(int argc, char* argv[])
     int listen_for_events(SDL_Window *window, State *state, float dt);
     void process(State *state, float dt);
     void render(SDL_Renderer *renderer, State *state);
+    int IMG_Init();
+    void IMG_Quit();
 
     // Declare a state. This is used for interacting with EVERYTHING.
     State state;
@@ -180,20 +215,19 @@ int main(int argc, char* argv[])
 
     // Initialize SDL
     SDL_Init(SDL_INIT_VIDEO);
+    IMG_Init();
 
     // Create window.
     // I made the window bigger than 16x32, but kept that aspect ratio.
     window = SDL_CreateWindow("LEDs",                        // Window title
                               SDL_WINDOWPOS_UNDEFINED,              // Initial x position
                               SDL_WINDOWPOS_UNDEFINED,              // Initial y position
-                              DISPLAY_WIDTH,                                  // Width
-                              DISPLAY_HEIGHT,                                  // Height
+                              DISPLAY_WIDTH * 2,
+                              DISPLAY_HEIGHT,
                               0);                                   // Flags
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     state.renderer = renderer;
-
-
 
     // Event loop
     int done = 0;
@@ -226,6 +260,7 @@ int main(int argc, char* argv[])
     // Clean up
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
+    IMG_Quit();
     SDL_Quit();
     return 0;
 }

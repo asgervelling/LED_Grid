@@ -17,8 +17,20 @@ typedef struct
 
 typedef struct
 {
+    SDL_Texture *texture;
+    Square rect;
+} Button;
+
+typedef struct
+{
+    float x, y, w, h;
+    Button randomize_button;
+} GUI_Element;
+
+typedef struct
+{
     int current_frame;
-} Animator;
+} Animation;
 
 // State: Contains everything.
 typedef struct
@@ -28,5 +40,8 @@ typedef struct
     SDL_Renderer *renderer;
 
     // Animation
-    Animator animator;
+    Animation animation;
+
+    // GUI
+    GUI_Element GUI;
 } State;
