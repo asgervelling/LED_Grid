@@ -27,9 +27,24 @@ typedef struct
     Button randomize_button;
 } GUI_Element;
 
+// Animation helpers
+enum animations
+{
+    // Until I learn to just do a hashtable lol
+    no_animation,
+    test_animation
+};
+
 typedef struct
 {
+    int playing;
+
+    // Actual frame
     int current_frame;
+
+    // Frame of an animation
+    int animation_frame;
+    int current_animation;
 } Animation;
 
 // State: Contains everything.

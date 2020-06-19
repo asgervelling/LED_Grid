@@ -10,6 +10,8 @@
 #define DISPLAY_WIDTH 320
 #define DISPLAY_HEIGHT 640
 
+#define LED_NO 512
+
 void load_program(State *state)
 {
     void init_square(State *state);
@@ -57,7 +59,9 @@ void init_LEDs(State *state)
 void init_animation(State *state)
 {
     // Initialize animation helper
+    state->animation.playing = 0;
     state->animation.current_frame = 0;
+    state->animation.current_animation = no_animation;
 }
 
 void init_square(State *state)
@@ -75,17 +79,25 @@ void init_GUI(State *state)
 
     // Button image
     SDL_Surface *surface = IMG_Load("assets/GUI/button_randomize.png");
+    img_load_error_msg(surface, "button_randomize.png");
     state->GUI.randomize_button.texture = SDL_CreateTextureFromSurface(state->renderer, surface);
     SDL_FreeSurface(surface);
 
-    // Button rect
-    state->GUI.x = 22;
-    printf("x: %d\n", state->GUI.x);
 
+    // GUI rect
+    state->GUI.x = DISPLAY_WIDTH / 2;
+
+    // Button rect
+    state->GUI.randomize_button.rect.x = state->GUI.x + (state->GUI.w / 4);
+    state->GUI.randomize_button.rect.y = state->GUI.y + (state->GUI.w / 4);
+    state->GUI.randomize_button.rect.w = 120;
+    state->GUI.randomize_button.rect.h = 34;
 }
+
 int listen_for_events(SDL_Window *window, State *state, float dt)
 {
     void set_rgba_random_all_LEDs(State *state);
+    void func_test_animation(State *state, int length_in_frames);
 
     /* Listen for events. Return done = 1 if user quits program, done = 0 if not. */
     SDL_Event event;
@@ -118,6 +130,10 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
                         case SDLK_p:
                             set_rgba_random_all_LEDs(state);
                         break;
+                        case SDLK_a:
+                            state->animation.playing = 1;
+                            state->animation.current_animation = test_animation;
+                        break;
                     }
                 }
             break;
@@ -133,7 +149,9 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
 
 void process(State *state, float dt)
 {
-    return;
+    void do_current_animation(State *state, int animation);
+
+    do_current_animation(state, test_animation);
 }
 
 void render(SDL_Renderer *renderer, State *state)
@@ -152,6 +170,17 @@ void render(SDL_Renderer *renderer, State *state)
                              state->LEDs[i].h};
         SDL_RenderFillRect(renderer, &LED_rect);
     }
+
+    // Draw GUI
+    SDL_Rect GUI_rect;
+    GUI_rect.x = state->GUI.randomize_button.rect.x,
+    GUI_rect.y = state->GUI.randomize_button.rect.y,
+    GUI_rect.w = state->GUI.randomize_button.rect.w,
+    GUI_rect.h = state->GUI.randomize_button.rect.h;
+    SDL_RenderCopy(renderer,
+                   state->GUI.randomize_button.texture,
+                   NULL,
+                   &GUI_rect);
 
     // Present everything
     SDL_RenderPresent(renderer);
@@ -193,6 +222,61 @@ void set_rgba_random_all_LEDs(State* state)
     }
 }
 
+void do_test_animation(State *state)
+{
+    void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
+    void set_default_all_LEDs(State *state);
+
+    set_default_all_LEDs(state);
+    set_rgba(state->animation.animation_frame, 0, 255, 0, 255, state);
+}
+
+void set_default_all_LEDs(State *state)
+{
+    void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
+
+    // Set the color of all LEDs to black
+    for (int i = 0; i < LED_NO; ++i)
+    {
+        set_rgba(i, 0, 0, 0, 255, state);
+    }
+}
+
+void do_current_animation(State *state, int animation) // Called every frame
+{
+    void do_test_animation(State *state);
+
+    if (state->animation.playing == 0)
+    {
+        state->animation.animation_frame = 0;
+        state->animation.current_frame = 0;
+        return;
+    }
+
+    // Set the speed of the animation
+    int frame_length_ms = 2;
+    state->animation.current_animation = animation;
+    state->animation.current_frame += 1;
+
+    // Set animation speed according to frame length
+    if (state->animation.current_frame % frame_length_ms == 0)
+    {
+        state->animation.animation_frame += 1;
+    }
+    // printf("Frame: %d\nAnimation frame: %d\n\n", state->animation.current_frame, state->animation.animation_frame);
+
+    // The animations are currently stored in an enum
+    if (state->animation.current_animation == test_animation)
+    {
+        do_test_animation(state);
+    }
+
+}
+
+/*************
+Main
+*************/
+
 int main(int argc, char* argv[])
 {
     // Declarations
@@ -215,7 +299,6 @@ int main(int argc, char* argv[])
 
     // Initialize SDL
     SDL_Init(SDL_INIT_VIDEO);
-    IMG_Init();
 
     // Create window.
     // I made the window bigger than 16x32, but kept that aspect ratio.
@@ -248,6 +331,9 @@ int main(int argc, char* argv[])
         {
             done = 1;
         }
+
+        // Process
+        process(&state, dt);
 
         // Render stuff.
         render(renderer, &state);
