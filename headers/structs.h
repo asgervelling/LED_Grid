@@ -15,18 +15,6 @@ typedef struct
     int r, g, b, a;
 } LED;
 
-typedef struct
-{
-    SDL_Texture *texture;
-    Square rect;
-} Button;
-
-typedef struct
-{
-    float x, y, w, h;
-    Button randomize_button;
-} GUI_Element;
-
 // Animation helpers
 enum animations
 {
@@ -34,6 +22,24 @@ enum animations
     no_animation,
     test_animation
 };
+
+// Controls
+typedef struct
+{
+    int x, y;
+} Mouse;
+
+typedef struct
+{
+    SDL_Texture *texture;
+    int x, y, w, h;
+} Button;
+
+typedef struct
+{
+    float x, y, w, h;
+    Button randomize_button;
+} GUI_Element;
 
 typedef struct
 {
@@ -59,4 +65,5 @@ typedef struct
 
     // GUI
     GUI_Element GUI;
+    Mouse mouse;
 } State;
