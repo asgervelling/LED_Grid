@@ -85,7 +85,7 @@ void init_GUI(State *state)
     // Button image
     SDL_Surface *surface = IMG_Load("assets/GUI/button_randomize.png");
     img_load_error_msg(surface, "button_randomize.png");
-    state->GUI.randomize_button.texture = SDL_CreateTextureFromSurface(state->renderer, surface);
+    state->GUI.animation_1_button.texture = SDL_CreateTextureFromSurface(state->renderer, surface);
     SDL_FreeSurface(surface);
 
     // GUI rect
@@ -95,17 +95,23 @@ void init_GUI(State *state)
     state->GUI.h = DISPLAY_HEIGHT;
     printf("GUI Y: %d\n", state->GUI.y);
 
-    // Animation 1 button rect
-    state->GUI.randomize_button.x = state->GUI.x + 40;
-    state->GUI.randomize_button.y = state->GUI.y + 40;
-    state->GUI.randomize_button.w = 120;
-    state->GUI.randomize_button.h = 34;
-
     // Stop animation button rect
     state->GUI.stop_button.w = 32;
     state->GUI.stop_button.h = 32;
     state->GUI.stop_button.x = DISPLAY_WIDTH - state->GUI.stop_button.w;
     state->GUI.stop_button.y = 0;
+
+    // Animation 1 button rect
+    state->GUI.animation_1_button.x = state->GUI.x + 40;
+    state->GUI.animation_1_button.y = state->GUI.y + 40;
+    state->GUI.animation_1_button.w = 120;
+    state->GUI.animation_1_button.h = 34;
+
+    // Randomize button
+    state->GUI.randomize_button.x = state->GUI.x + 40;
+    state->GUI.randomize_button.y = (state->GUI.y + 40) * 2;
+    state->GUI.randomize_button.w = 120;
+    state->GUI.randomize_button.h = 34;
 }
 
 int listen_for_events(SDL_Window *window, State *state, float dt)
@@ -188,6 +194,10 @@ void process(State *state, float dt)
 
 void render(SDL_Renderer *renderer, State *state)
 {
+    // Colors
+    int blue[16] = {0, 80, 180, 255};
+    int light_gray[16] = {210, 210, 255, 255};
+
     // Draw BG
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     // SDL_RenderClear(renderer);
@@ -204,20 +214,16 @@ void render(SDL_Renderer *renderer, State *state)
     }
 
     // Draw GUI
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_SetRenderDrawColor(renderer, blue[0], blue[1], blue[2], blue[3]);
     SDL_Rect GUI_rect = {state->GUI.x,
                          state->GUI.y,
                          state->GUI.w,
                          state->GUI.h};
     SDL_RenderFillRect(renderer, &GUI_rect);
 
-    // Animation 1 button
-    SDL_SetRenderDrawColor(renderer, 210, 210, 210, 255);
-    SDL_Rect rand_button_rect = {state->GUI.randomize_button.x,
-                                 state->GUI.randomize_button.y,
-                                 state->GUI.randomize_button.w,
-                                 state->GUI.randomize_button.h};
-    SDL_RenderFillRect(renderer, &rand_button_rect);
+    /* Buttons */
+
+    int i = 0;
 
     // Stop button
     SDL_SetRenderDrawColor(renderer, 150, 0, 0, 255);
@@ -227,7 +233,22 @@ void render(SDL_Renderer *renderer, State *state)
                                  state->GUI.stop_button.h};
     SDL_RenderFillRect(renderer, &stop_button_rect);
 
-    // SDL_RenderCopy(state->renderer, state->GUI.randomize_button.texture, NULL, &rand_button_rect);
+    // Animation 1 button
+    SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
+    SDL_Rect anim_1_button_rect = {state->GUI.animation_1_button.x,
+                                   state->GUI.animation_1_button.y,
+                                   state->GUI.animation_1_button.w,
+                                   state->GUI.animation_1_button.h};
+    SDL_RenderFillRect(renderer, &anim_1_button_rect);
+
+    // Randomize button
+    SDL_Rect rand_button_rect = {state->GUI.randomize_button.x,
+                                 state->GUI.randomize_button.y,
+                                 state->GUI.randomize_button.w,
+                                 state->GUI.randomize_button.h};
+    SDL_RenderFillRect(renderer, &rand_button_rect);
+
+    // SDL_RenderCopy(state->renderer, state->GUI.animation_1_button.texture, NULL, &rand_button_rect);
 
     // Present everything
     SDL_RenderPresent(renderer);
@@ -344,15 +365,7 @@ void click(State *state)
     int mouse_hovering(State *state, int bx, int by, int bw, int bh);
     void start_animation(State *state, int animation_enum);
     void stop_animation(State *state);
-
-    // "Animation 1"-button
-    if (mouse_hovering(state, state->GUI.randomize_button.x,
-                              state->GUI.randomize_button.y,
-                              state->GUI.randomize_button.w,
-                              state->GUI.randomize_button.h))
-    {
-        start_animation(state, test_animation);
-    }
+    void set_rgba_random_all_LEDs(State *state);
 
     // Stop animation button
     if (mouse_hovering(state, state->GUI.stop_button.x,
@@ -362,6 +375,25 @@ void click(State *state)
     {
         stop_animation(state);
     }
+
+    // "Animation 1"-button
+    if (mouse_hovering(state, state->GUI.animation_1_button.x,
+                              state->GUI.animation_1_button.y,
+                              state->GUI.animation_1_button.w,
+                              state->GUI.animation_1_button.h))
+    {
+        start_animation(state, test_animation);
+    }
+
+    // Randomize button
+    if (mouse_hovering(state, state->GUI.randomize_button.x,
+                              state->GUI.randomize_button.y,
+                              state->GUI.randomize_button.w,
+                              state->GUI.randomize_button.h))
+    {
+        set_rgba_random_all_LEDs(state);
+    }
+
 }
 
 int mouse_hovering(State *state, int bx, int by, int bw, int bh)
