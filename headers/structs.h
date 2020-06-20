@@ -39,6 +39,7 @@ typedef struct
 {
     float x, y, w, h;
     Button randomize_button;
+    Button stop_button;
 } GUI_Element;
 
 typedef struct

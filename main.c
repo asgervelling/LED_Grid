@@ -95,11 +95,17 @@ void init_GUI(State *state)
     state->GUI.h = DISPLAY_HEIGHT;
     printf("GUI Y: %d\n", state->GUI.y);
 
-    // Button rect
+    // Animation 1 button rect
     state->GUI.randomize_button.x = state->GUI.x + 40;
     state->GUI.randomize_button.y = state->GUI.y + 40;
     state->GUI.randomize_button.w = 120;
     state->GUI.randomize_button.h = 34;
+
+    // Stop animation button rect
+    state->GUI.stop_button.w = 32;
+    state->GUI.stop_button.h = 32;
+    state->GUI.stop_button.x = DISPLAY_WIDTH - state->GUI.stop_button.w;
+    state->GUI.stop_button.y = 0;
 }
 
 int listen_for_events(SDL_Window *window, State *state, float dt)
@@ -205,21 +211,24 @@ void render(SDL_Renderer *renderer, State *state)
                          state->GUI.h};
     SDL_RenderFillRect(renderer, &GUI_rect);
 
-    // Draw button
+    // Animation 1 button
     SDL_SetRenderDrawColor(renderer, 210, 210, 210, 255);
     SDL_Rect rand_button_rect = {state->GUI.randomize_button.x,
                                  state->GUI.randomize_button.y,
                                  state->GUI.randomize_button.w,
                                  state->GUI.randomize_button.h};
+    SDL_RenderFillRect(renderer, &rand_button_rect);
 
-    printf("GUI:\n");
-    printf("x: %d, y: %d, w: %d, h: %d\n", GUI_rect.x, GUI_rect.y, GUI_rect.w, GUI_rect.h);
-    printf("Button:\n");
-    printf("x: %d, y: %d, w: %d, h: %d\n\n", rand_button_rect.x, rand_button_rect.y, rand_button_rect.w, rand_button_rect.h);
+    // Stop button
+    SDL_SetRenderDrawColor(renderer, 150, 0, 0, 255);
+    SDL_Rect stop_button_rect = {state->GUI.stop_button.x,
+                                 state->GUI.stop_button.y,
+                                 state->GUI.stop_button.w,
+                                 state->GUI.stop_button.h};
+    SDL_RenderFillRect(renderer, &stop_button_rect);
 
     // SDL_RenderCopy(state->renderer, state->GUI.randomize_button.texture, NULL, &rand_button_rect);
-    SDL_RenderFillRect(state->renderer, &rand_button_rect);
-    // printf("width: %d\n", state->GUI.randomize_button.w);
+
     // Present everything
     SDL_RenderPresent(renderer);
 }
@@ -232,6 +241,14 @@ void start_animation(State *state, int animation_enum)
 {
     state->animation.playing = 1;
     state->animation.current_animation = animation_enum;
+}
+
+void stop_animation(State *state)
+{
+    void set_default_all_LEDs(State *state);
+
+    state->animation.playing = 0;
+    state->animation.current_animation = no_animation;
 }
 
 void set_rgba(int LED_number, int r, int g, int b, int a, State *state)
@@ -324,15 +341,42 @@ Control
 void click(State *state)
 {
     void do_test_animation(State *state);
+    int mouse_hovering(State *state, int bx, int by, int bw, int bh);
+    void start_animation(State *state, int animation_enum);
+    void stop_animation(State *state);
 
     // "Animation 1"-button
-    if (state->mouse.x >= state->GUI.randomize_button.x &&
-        state->mouse.x <= state->GUI.randomize_button.x + state->GUI.randomize_button.w &&
-        state->mouse.y >= state->GUI.randomize_button.y &&
-        state->mouse.y <= state->GUI.randomize_button.y + state->GUI.randomize_button.h)
+    if (mouse_hovering(state, state->GUI.randomize_button.x,
+                              state->GUI.randomize_button.y,
+                              state->GUI.randomize_button.w,
+                              state->GUI.randomize_button.h))
     {
         start_animation(state, test_animation);
     }
+
+    // Stop animation button
+    if (mouse_hovering(state, state->GUI.stop_button.x,
+                              state->GUI.stop_button.y,
+                              state->GUI.stop_button.w,
+                              state->GUI.stop_button.h))
+    {
+        stop_animation(state);
+    }
+}
+
+int mouse_hovering(State *state, int bx, int by, int bw, int bh)
+{
+    int ax = state->mouse.x;
+    int ay = state->mouse.y;
+
+    if (ax >= bx &&
+        ax <= bx + bw &&
+        ay >= by &&
+        ay <= by + bh)
+    {
+        return 1;
+    }
+    return 0;
 }
 
 /*************
