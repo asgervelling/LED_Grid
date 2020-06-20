@@ -37,8 +37,9 @@ void init_LEDs(State *state)
     // Initialize 512 "LEDs"
     int LED_ID = 0;
     float y = 0;
-    // An LED is black by default
-    int default_rgba = 0;
+
+    // An LED is light gray by default
+    int light_gray[16] = {210, 210, 255, 255};
     for (int row = 0; row < 32; ++row)
     {
         float x = 0;
@@ -50,10 +51,10 @@ void init_LEDs(State *state)
             state->LEDs[LED_ID].h = state->square.h;
 
             // Color
-            state->LEDs[LED_ID].r = default_rgba;
-            state->LEDs[LED_ID].g = default_rgba;
-            state->LEDs[LED_ID].b = default_rgba;
-            state->LEDs[LED_ID].a = default_rgba;
+            state->LEDs[LED_ID].r = light_gray[0];
+            state->LEDs[LED_ID].g = light_gray[1];
+            state->LEDs[LED_ID].b = light_gray[2];
+            state->LEDs[LED_ID].a = light_gray[3];
 
             LED_ID += 1;
             x += state->square.w;
@@ -93,7 +94,6 @@ void init_GUI(State *state)
     state->GUI.y = 0;
     state->GUI.w = BRUTUS_WIDTH;
     state->GUI.h = DISPLAY_HEIGHT;
-    printf("GUI Y: %d\n", state->GUI.y);
 
     // Stop animation button rect
     state->GUI.stop_button.w = 32;
@@ -200,7 +200,7 @@ void render(SDL_Renderer *renderer, State *state)
 
     // Draw BG
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    // SDL_RenderClear(renderer);
+    SDL_RenderClear(renderer);
 
     // Draw 512 LEDs
     for (int i = 0; i < 512; ++i)
@@ -306,21 +306,28 @@ void set_rgba_random_all_LEDs(State* state)
 
 void do_test_animation(State *state)
 {
+    if (state->animation.animation_frame >= LED_NO)
+    {
+        stop_animation(state);
+        return;
+    }
     void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
     void set_default_all_LEDs(State *state);
+    int blue[16] = {0, 80, 180, 255};
 
     set_default_all_LEDs(state);
-    set_rgba(state->animation.animation_frame, 0, 255, 0, 255, state);
+    set_rgba(state->animation.animation_frame, blue[0], blue[1], blue[2], blue[3], state);
 }
 
 void set_default_all_LEDs(State *state)
 {
+    int light_gray[16] = {210, 210, 255, 255};
     void set_rgba(int LED_number, int r, int g, int b, int a, State *state);
 
     // Set the color of all LEDs to black
     for (int i = 0; i < LED_NO; ++i)
     {
-        set_rgba(i, 0, 0, 0, 255, state);
+        set_rgba(i, light_gray[0], light_gray[1], light_gray[2], light_gray[3], state);
     }
 }
 
