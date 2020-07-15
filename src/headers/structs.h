@@ -1,5 +1,3 @@
-#include "SDL.h"
-
 typedef struct
 {
     float x, y, w, h;

@@ -3,7 +3,8 @@
 #include <math.h>
 #include <time.h>
 
-#include "SDL.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include "headers/structs.h"
 #include "headers/file_io.h"
 
@@ -81,6 +82,8 @@ void init_square(State *state)
 
 void init_GUI(State *state)
 {
+
+    /* 
     SDL_Surface* IMG_Load(const char *file);
 
     // Button image
@@ -88,6 +91,8 @@ void init_GUI(State *state)
     img_load_error_msg(surface, "button_randomize.png");
     state->GUI.animation_1_button.texture = SDL_CreateTextureFromSurface(state->renderer, surface);
     SDL_FreeSurface(surface);
+
+    */
 
     // GUI rect
     state->GUI.x = BRUTUS_WIDTH;
@@ -223,7 +228,6 @@ void render(SDL_Renderer *renderer, State *state)
 
     /* Buttons */
 
-    int i = 0;
 
     // Stop button
     SDL_SetRenderDrawColor(renderer, 150, 0, 0, 255);
