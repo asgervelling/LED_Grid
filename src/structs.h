@@ -1,3 +1,9 @@
+#ifndef STRUCTS
+#define STRUCTS
+
+#include <SDL2/SDL.h>
+
+
 typedef struct
 {
     float x, y, w, h;
@@ -18,7 +24,9 @@ enum animations
 {
     // Until I learn to just do a hashtable lol
     no_animation,
-    test_animation
+    test_animation,
+    ax_plus_b_anim,
+    gradient_anim
 };
 
 // Controls
@@ -45,6 +53,14 @@ typedef struct
 
 typedef struct
 {
+    int display_width, display_height;
+    int brutus_width, brutus_height;
+    int LED_width, LED_height;
+} Settings;
+
+
+typedef struct
+{
     int playing;
 
     // Actual frame
@@ -53,13 +69,16 @@ typedef struct
     // Frame of an animation
     int animation_frame;
     int current_animation;
+
+    float frame_rate;
 } Animation;
 
 // State: Contains everything.
 typedef struct
 {
     Square square;
-    LED LEDs[512];
+    LED LEDs[32][16];
+    LED LEDs_Transposed[16][32];
     SDL_Renderer *renderer;
 
     // Animation
@@ -68,4 +87,9 @@ typedef struct
     // GUI
     GUI_Element GUI;
     Mouse mouse;
+
+    // Settings
+    Settings settings;
 } State;
+
+#endif
