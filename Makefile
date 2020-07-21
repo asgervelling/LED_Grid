@@ -5,7 +5,7 @@
 # Compiler settings - Can be customized.
 CC = gcc
 CXXFLAGS = -std=c11 -Wall
-LDFLAGS = -lSDL2 -lGL -lGLEW -lm
+LDFLAGS = -lSDL2 -lGL -lGLEW -lm -lSDL2_image
 
 # Makefile settings - Can be customized.
 APPNAME = LED_Grid

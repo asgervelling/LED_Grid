@@ -30,13 +30,13 @@ gcc -std=c11 -Wall -o LED_Grid obj/main.o obj/graphics.o -lSDL2 -lGL -lGLEW -lm
 Initialize
 *************/
 
-void load_program(State *state)
+void load_program(State *state, SDL_Renderer *renderer)
 {
     init_settings(state);
     init_square(state);
     init_LEDs(state);
     init_animation(state);
-    init_GUI(state);
+    init_GUI(state, renderer);
 }
 
 int listen_for_events(SDL_Window *window, State *state, float dt)
@@ -108,18 +108,22 @@ void process(State *state, float dt)
     // get mouse position
     SDL_GetMouseState(&state->mouse.x, &state->mouse.y);
 
-    do_current_animation(state, test_animation);
+    do_current_animation(state, state->animation.current_animation);
 }
 
 void render(SDL_Renderer *renderer, State *state)
 {
+    void render_GUI(State *state, SDL_Renderer *renderer);
+    render_GUI(state, renderer);
+    // Present everything
+    SDL_RenderPresent(renderer);
+}
+
+void render_GUI(State *state, SDL_Renderer *renderer)
+{
     // Colors
     int blue[16] = {0, 80, 180, 255};
     int light_gray[16] = {210, 210, 255, 255};
-
-    // Draw BG
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
 
     // Draw 512 LEDs
     for (int row = 0; row < 32; ++row)
@@ -164,6 +168,7 @@ void render(SDL_Renderer *renderer, State *state)
                                    state->GUI.animation_1_button.w,
                                    state->GUI.animation_1_button.h};
     SDL_RenderFillRect(renderer, &anim_1_button_rect);
+    
 
     // Randomize button
     SDL_Rect rand_button_rect = {state->GUI.randomize_button.x,
@@ -172,10 +177,13 @@ void render(SDL_Renderer *renderer, State *state)
                                  state->GUI.randomize_button.h};
     SDL_RenderFillRect(renderer, &rand_button_rect);
 
-    // SDL_RenderCopy(state->renderer, state->GUI.animation_1_button.texture, NULL, &rand_button_rect);
+    
 
-    // Present everything
-    SDL_RenderPresent(renderer);
+    SDL_Rect image_rect = {state->GUI.animation_1_button.x,
+                           state->GUI.animation_1_button.y,
+                           state->GUI.animation_1_button.w,
+                           state->GUI.animation_1_button.h};
+    SDL_RenderCopy(renderer, state->GUI.animation_1_button.image_texture, NULL, &image_rect);
 }
 
 /*************
@@ -187,12 +195,8 @@ void click(State *state)
     void do_test_animation(State *state);
     int mouse_hovering(State *state, int bx, int by, int bw, int bh);
     void start_animation(State *state, int animation_enum);
-    void stop_animation(State *state);
-    void set_rgba_random_all_LEDs(State *state);
-
-    // Reset animation before starting a new one
-    stop_animation(state);
-    set_default_all_LEDs(state);
+    void stop_animation(State *state, int clear_screen);
+    void click_LED(State *state);
 
     // Stop animation button
     if (mouse_hovering(state, state->GUI.stop_button.x,
@@ -200,8 +204,7 @@ void click(State *state)
                               state->GUI.stop_button.w,
                               state->GUI.stop_button.h))
     {
-        stop_animation(state);
-        set_default_all_LEDs(state);
+        stop_animation(state, 1);
     }
 
     // "Animation 1"-button
@@ -210,7 +213,8 @@ void click(State *state)
                               state->GUI.animation_1_button.w,
                               state->GUI.animation_1_button.h))
     {
-        start_animation(state, gradient_anim);
+        stop_animation(state, 1);
+        start_animation(state, test_animation);
     }
 
     // Randomize button
@@ -219,7 +223,16 @@ void click(State *state)
                               state->GUI.randomize_button.w,
                               state->GUI.randomize_button.h))
     {
+        stop_animation(state, 1);
         start_animation(state, gradient_anim);
+    }
+
+    if (!mouse_hovering(state, state->GUI.x,
+                              state->GUI.y,
+                              state->GUI.w,
+                              state->GUI.h))
+    {
+        click_LED(state);
     }
 
 }
@@ -239,6 +252,14 @@ int mouse_hovering(State *state, int bx, int by, int bw, int bh)
     return 0;
 }
 
+void click_LED(State *state)
+{
+    // Flip x and y
+    int LED_x = state->mouse.y / state->settings.LED_width;
+    int LED_y = state->mouse.x / state->settings.LED_height;
+    set_rgba(LED_x, LED_y, 255, 0, 0, 255, state);
+}
+
 /*************
 Main
 *************/
@@ -246,7 +267,7 @@ Main
 int main(int argc, char* argv[])
 {
     // Declarations
-    void load_program(State *state);
+    void load_program(State *state, SDL_Renderer *renderer);
     int listen_for_events(SDL_Window *window, State *state, float dt);
     void process(State *state, float dt);
     void render(SDL_Renderer *renderer, State *state);
@@ -255,26 +276,35 @@ int main(int argc, char* argv[])
     State state;
 
     // Initialize
-    load_program(&state);
+    SDL_Init(SDL_INIT_EVERYTHING);
+    // load support for the JPG and PNG image formats
+    int flags = IMG_INIT_JPG | IMG_INIT_PNG;
+    int initted = IMG_Init(flags);
+    if ((initted & flags) != flags) 
+    {
+        printf("IMG_Init: Failed to init required jpg and png support!\n");
+        printf("IMG_Init: %s\n", IMG_GetError());
+        // handle error
+    }
 
     // Declare SDL objects
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
-
-    // Initialize SDL
-    SDL_Init(SDL_INIT_VIDEO);
 
     // Create window.
     // I made the window bigger than 16x32, but kept that aspect ratio.
     window = SDL_CreateWindow("LEDs",                        // Window title
                               SDL_WINDOWPOS_UNDEFINED,              // Initial x position
                               SDL_WINDOWPOS_UNDEFINED,              // Initial y position
-                              state.settings.display_width,
-                              state.settings.display_height,
+                              640,
+                              640,
                               0);                                   // Flags
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     state.renderer = renderer;
+
+    // Initialize most things in the program
+    load_program(&state, renderer);    
 
     // Event loop
     int done = 0;
@@ -308,6 +338,8 @@ int main(int argc, char* argv[])
     }
 
     // Clean up
+    SDL_DestroyTexture(state.GUI.animation_1_button.image_texture);
+    IMG_Quit();
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();

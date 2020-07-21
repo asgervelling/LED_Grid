@@ -2,6 +2,7 @@
 #define STRUCTS
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 
 typedef struct
@@ -37,8 +38,8 @@ typedef struct
 
 typedef struct
 {
-    SDL_Texture *texture;
     int x, y, w, h;
+    SDL_Texture *image_texture;
 } Button;
 
 typedef struct

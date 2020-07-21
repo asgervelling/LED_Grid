@@ -4,7 +4,7 @@
 #include "structs.h"
 
 void start_animation(State *state, int animation_enum);
-void stop_animation(State *state);
+void stop_animation(State *state, int clear_screen);
 void set_rgba(int row, int col, int r, int g, int b, int a, State *state);
 void set_rgba_random(int row, int col, State *state);
 void set_rgba_random_all_LEDs(State* state);
