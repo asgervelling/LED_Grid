@@ -104,7 +104,7 @@ void one_by_one_animation(State *state)
         stop_animation(state, 0);
         return;
     }
-    int row = 32 - (floor(state->animation.animation_frame / 16));
+    int row = 31 - (floor(state->animation.animation_frame / 16));
     int col = state->animation.animation_frame % 16;
 
     set_rgba_random(row, col, state);
@@ -219,7 +219,68 @@ void print_matrix(State *state)
     printf("Number of rows: %d\n", LEN(state->LEDs));
     printf("Number of columns: %d\n", LEN(state->LEDs[0]));
 
-
     printf("Number of rows: %d\n", LEN(state->LEDs_Transposed));
     printf("Number of columns: %d\n", LEN(state->LEDs_Transposed[0]));
+}
+
+/****************************
+User animation
+****************************/
+
+void store_single_LED(State *state, int LED_row, int LED_column, int frame)
+{
+    int color = state->animation.user_animation.active_color;
+    // Essentially a 3D array
+    state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].r = state->animation.user_animation.active_color[0];
+    state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].g = state->animation.user_animation.active_color[1];
+    state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].b = state->animation.user_animation.active_color[2];
+    state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].a = state->animation.user_animation.active_color[3];
+}
+
+void init_new_animation(State *state, int frames)
+{
+    // Set all frames in a new animation to the default color
+    int light_gray[16] = {210, 210, 255, 255};
+    for (int i = 0; i < 3; ++i)
+    {
+        state->animation.user_animation.active_color[i] = light_gray[i];
+    }
+
+
+    for (int frame = 0; frame < frames; ++frame)
+    {
+        for (int row = 0; row < 32; ++row)
+        {
+            for (int column = 0; column < 16; ++column)
+            {
+                store_single_LED(state,
+                                 row,
+                                 column,
+                                 frame);
+            }
+        }
+    }
+    printf("initialized new anim\n");
+}
+
+void show_animation_frame(State *state)
+{
+    for (int row = 0; row < 32; ++row)
+    {
+        for (int column = 0; column < 16; ++column)
+        {
+            set_rgba(row,
+                     column,
+                     state->animation.user_animation.frames[state->animation.user_animation.active_frame].LEDs[row][column].r,
+                     state->animation.user_animation.frames[state->animation.user_animation.active_frame].LEDs[row][column].g,
+                     state->animation.user_animation.frames[state->animation.user_animation.active_frame].LEDs[row][column].b,
+                     state->animation.user_animation.frames[state->animation.user_animation.active_frame].LEDs[row][column].a,
+                     state);
+        }
+    }
+}
+
+void store_animation_frame(State *state)
+{
+    printf("Active frame: %d\n", state->animation.user_animation.active_frame);
 }

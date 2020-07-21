@@ -16,5 +16,11 @@ void transpose(State *state);
 void print_matrix(State *state);
 void gradient_animation(State *state);
 
+// User animation
+void store_single_LED(State *state, int LED_row, int LED_column, int frame);
+void init_new_animation(State *state, int frames);
+void show_animation_frame(State *state);
+void store_animation_frame(State *state);
+
 
 #endif

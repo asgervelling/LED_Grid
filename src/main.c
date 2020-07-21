@@ -37,6 +37,8 @@ void load_program(State *state, SDL_Renderer *renderer)
     init_LEDs(state);
     init_animation(state);
     init_GUI(state, renderer);
+    init_user_tools(state);
+    init_new_animation(state, 32);
 }
 
 int listen_for_events(SDL_Window *window, State *state, float dt)
@@ -108,6 +110,7 @@ void process(State *state, float dt)
     // get mouse position
     SDL_GetMouseState(&state->mouse.x, &state->mouse.y);
 
+    // Animation
     do_current_animation(state, state->animation.current_animation);
 }
 
@@ -121,8 +124,12 @@ void render(SDL_Renderer *renderer, State *state)
 
 void render_GUI(State *state, SDL_Renderer *renderer)
 {
+    /**********************
+    Render the entire GUI. Most of the buttons are just rectangles for now, adding images later.
+    **********************/
     // Colors
     int blue[16] = {0, 80, 180, 255};
+    int dark_blue[16] = {0, 40, 90, 255};
     int light_gray[16] = {210, 210, 255, 255};
 
     // Draw 512 LEDs
@@ -142,7 +149,11 @@ void render_GUI(State *state, SDL_Renderer *renderer)
         }
     }
 
-    // Draw GUI
+    /**************
+    Main GUI
+    **************/
+
+    // Draw GUI element
     SDL_SetRenderDrawColor(renderer, blue[0], blue[1], blue[2], blue[3]);
     SDL_Rect GUI_rect = {state->GUI.x,
                          state->GUI.y,
@@ -155,35 +166,85 @@ void render_GUI(State *state, SDL_Renderer *renderer)
 
     // Stop button
     SDL_SetRenderDrawColor(renderer, 150, 0, 0, 255);
-    SDL_Rect stop_button_rect = {state->GUI.stop_button.x,
-                                 state->GUI.stop_button.y,
-                                 state->GUI.stop_button.w,
-                                 state->GUI.stop_button.h};
+    SDL_Rect stop_button_rect = {state->GUI.button_stop.x,
+                                 state->GUI.button_stop.y,
+                                 state->GUI.button_stop.w,
+                                 state->GUI.button_stop.h};
     SDL_RenderFillRect(renderer, &stop_button_rect);
 
     // Animation 1 button
     SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
-    SDL_Rect anim_1_button_rect = {state->GUI.animation_1_button.x,
-                                   state->GUI.animation_1_button.y,
-                                   state->GUI.animation_1_button.w,
-                                   state->GUI.animation_1_button.h};
-    SDL_RenderFillRect(renderer, &anim_1_button_rect);
+    SDL_Rect anim_1_button_rect = {state->GUI.button_animation_1.x,
+                                   state->GUI.button_animation_1.y,
+                                   state->GUI.button_animation_1.w,
+                                   state->GUI.button_animation_1.h};
+    SDL_RenderCopy(renderer, state->GUI.button_animation_1.image_texture, NULL, &anim_1_button_rect);
     
 
     // Randomize button
-    SDL_Rect rand_button_rect = {state->GUI.randomize_button.x,
-                                 state->GUI.randomize_button.y,
-                                 state->GUI.randomize_button.w,
-                                 state->GUI.randomize_button.h};
+    SDL_Rect rand_button_rect = {state->GUI.button_animation_2.x,
+                                 state->GUI.button_animation_2.y,
+                                 state->GUI.button_animation_2.w,
+                                 state->GUI.button_animation_2.h};
     SDL_RenderFillRect(renderer, &rand_button_rect);
 
-    
+    /**************
+    User animations GUI element
+    **************/
 
-    SDL_Rect image_rect = {state->GUI.animation_1_button.x,
-                           state->GUI.animation_1_button.y,
-                           state->GUI.animation_1_button.w,
-                           state->GUI.animation_1_button.h};
-    SDL_RenderCopy(renderer, state->GUI.animation_1_button.image_texture, NULL, &image_rect);
+    SDL_SetRenderDrawColor(renderer, dark_blue[0], dark_blue[1], dark_blue[2], dark_blue[3]);
+    SDL_Rect GUI_elem_user_anim_rect = {state->GUI.GUI_elem_user_animation.x,
+                                        state->GUI.GUI_elem_user_animation.y,
+                                        state->GUI.GUI_elem_user_animation.w,
+                                        state->GUI.GUI_elem_user_animation.h};
+    SDL_RenderFillRect(renderer, &GUI_elem_user_anim_rect);
+
+    // Buttons
+
+    // New animation button
+    if (state->animation.user_animation.animation_mode == 1)
+    {
+        SDL_SetRenderDrawColor(renderer, 120, 120, 120, 255);
+    }
+    else
+    {
+        SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
+    }
+    
+    SDL_Rect button_new_anim_rect = {state->GUI.button_new_animation.x,
+                                     state->GUI.button_new_animation.y,
+                                     state->GUI.button_new_animation.w,
+                                     state->GUI.button_new_animation.h};
+    SDL_RenderFillRect(renderer, &button_new_anim_rect);
+
+    SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
+    // Save animation button
+    SDL_Rect button_save_anim_rect = {state->GUI.button_save_animation.x,
+                                      state->GUI.button_save_animation.y,
+                                      state->GUI.button_save_animation.w,
+                                      state->GUI.button_save_animation.h};
+    SDL_RenderFillRect(renderer, &button_save_anim_rect);
+
+    // Timeline:
+    // Consists of n buttons that lead you to a specific frame in the user animation when clicked
+    int max_frames = 32;
+    for (int i = 0; i < max_frames; ++i)
+    {
+        SDL_Rect button_frame_rect = {state->GUI.button_animation_frame[i].x,
+                                      state->GUI.button_animation_frame[i].y,
+                                      state->GUI.button_animation_frame[i].w,
+                                      state->GUI.button_animation_frame[i].h};
+        // Highlight active frame
+        if (state->animation.user_animation.active_frame == i)
+        {
+            SDL_SetRenderDrawColor(renderer, 120, 120, 120, 255);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
+        }
+        SDL_RenderFillRect(renderer, &button_frame_rect);
+    } 
 }
 
 /*************
@@ -198,41 +259,76 @@ void click(State *state)
     void stop_animation(State *state, int clear_screen);
     void click_LED(State *state);
 
-    // Stop animation button
-    if (mouse_hovering(state, state->GUI.stop_button.x,
-                              state->GUI.stop_button.y,
-                              state->GUI.stop_button.w,
-                              state->GUI.stop_button.h))
-    {
-        stop_animation(state, 1);
-    }
-
-    // "Animation 1"-button
-    if (mouse_hovering(state, state->GUI.animation_1_button.x,
-                              state->GUI.animation_1_button.y,
-                              state->GUI.animation_1_button.w,
-                              state->GUI.animation_1_button.h))
-    {
-        stop_animation(state, 1);
-        start_animation(state, test_animation);
-    }
-
-    // Randomize button
-    if (mouse_hovering(state, state->GUI.randomize_button.x,
-                              state->GUI.randomize_button.y,
-                              state->GUI.randomize_button.w,
-                              state->GUI.randomize_button.h))
-    {
-        stop_animation(state, 1);
-        start_animation(state, gradient_anim);
-    }
-
     if (!mouse_hovering(state, state->GUI.x,
                               state->GUI.y,
                               state->GUI.w,
                               state->GUI.h))
     {
         click_LED(state);
+    }
+
+    // Stop animation button
+    if (mouse_hovering(state, state->GUI.button_stop.x,
+                              state->GUI.button_stop.y,
+                              state->GUI.button_stop.w,
+                              state->GUI.button_stop.h))
+    {
+        stop_animation(state, 1);
+    }
+
+    // "Animation 1"-button
+    if (mouse_hovering(state, state->GUI.button_animation_1.x,
+                              state->GUI.button_animation_1.y,
+                              state->GUI.button_animation_1.w,
+                              state->GUI.button_animation_1.h))
+    {
+        stop_animation(state, 1);
+        start_animation(state, test_animation);
+    }
+
+    // Animation 2 button
+    if (mouse_hovering(state, state->GUI.button_animation_2.x,
+                              state->GUI.button_animation_2.y,
+                              state->GUI.button_animation_2.w,
+                              state->GUI.button_animation_2.h))
+    {
+        stop_animation(state, 1);
+        start_animation(state, gradient_anim);
+    }
+
+    // New animation button
+    if (mouse_hovering(state, state->GUI.button_new_animation.x,
+                              state->GUI.button_new_animation.y,
+                              state->GUI.button_new_animation.w,
+                              state->GUI.button_new_animation.h))
+    {
+        if (state->animation.user_animation.animation_mode == 0)
+        {
+            state->animation.user_animation.animation_mode = 1;
+        }
+        else
+        {
+            state->animation.user_animation.animation_mode = 0;
+        }
+    }
+
+    // Save animation button
+
+
+    // Timeline buttons
+    if (state->animation.user_animation.animation_mode == 1)
+    {
+        for (int i = 0; i < 32; ++i)
+        {
+            if (mouse_hovering(state, state->GUI.button_animation_frame[i].x,
+                                    state->GUI.button_animation_frame[i].y,
+                                    state->GUI.button_animation_frame[i].w,
+                                    state->GUI.button_animation_frame[i].h))
+            {
+                state->animation.user_animation.active_frame = i;
+                show_animation_frame(state);
+            }
+        }
     }
 
 }
@@ -254,10 +350,28 @@ int mouse_hovering(State *state, int bx, int by, int bw, int bh)
 
 void click_LED(State *state)
 {
+    if (state->animation.user_animation.animation_mode == 0)
+    {
+        return;
+    }
+    state->animation.user_animation.active_color[0] = 255;
+    state->animation.user_animation.active_color[1] = 0;
+    state->animation.user_animation.active_color[2] = 0;
+    state->animation.user_animation.active_color[3] = 255;
     // Flip x and y
-    int LED_x = state->mouse.y / state->settings.LED_width;
-    int LED_y = state->mouse.x / state->settings.LED_height;
-    set_rgba(LED_x, LED_y, 255, 0, 0, 255, state);
+    int LED_row = state->mouse.y / state->settings.LED_width;
+    int LED_col = state->mouse.x / state->settings.LED_height;
+    set_rgba(LED_row,
+             LED_col,
+             state->animation.user_animation.active_color[0],
+             state->animation.user_animation.active_color[1],
+             state->animation.user_animation.active_color[2],
+             state->animation.user_animation.active_color[3],
+             state);
+    store_single_LED(state,
+                     LED_row,
+                     LED_col,
+                     state->animation.user_animation.active_frame);
 }
 
 /*************
@@ -292,11 +406,11 @@ int main(int argc, char* argv[])
     SDL_Renderer *renderer = NULL;
 
     // Create window.
-    // I made the window bigger than 16x32, but kept that aspect ratio.
+    // I made the window bigger than 16x32, but kept that aspect ratio for the LED GUI.
     window = SDL_CreateWindow("LEDs",                        // Window title
                               SDL_WINDOWPOS_UNDEFINED,              // Initial x position
                               SDL_WINDOWPOS_UNDEFINED,              // Initial y position
-                              640,
+                              960,
                               640,
                               0);                                   // Flags
 
@@ -338,7 +452,7 @@ int main(int argc, char* argv[])
     }
 
     // Clean up
-    SDL_DestroyTexture(state.GUI.animation_1_button.image_texture);
+    SDL_DestroyTexture(state.GUI.button_animation_1.image_texture);
     IMG_Quit();
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);

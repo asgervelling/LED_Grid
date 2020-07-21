@@ -20,16 +20,6 @@ typedef struct
     int r, g, b, a;
 } LED;
 
-// Animation helpers
-enum animations
-{
-    // Until I learn to just do a hashtable lol
-    no_animation,
-    test_animation,
-    ax_plus_b_anim,
-    gradient_anim
-};
-
 // Controls
 typedef struct
 {
@@ -47,18 +37,53 @@ typedef struct
     float x, y, w, h;
 
     // Buttons
-    Button stop_button;
-    Button randomize_button;
-    Button animation_1_button;
+    Button button_stop;
+    Button button_animation_1;
+    Button button_animation_2;
+
+    // User animations
+    Square GUI_elem_user_animation;
+    Button button_new_animation;
+    Button button_save_animation;
+
+    // User timeline
+    Button button_animation_frame[32]; // Timeline
 } GUI_Element;
 
 typedef struct
 {
     int display_width, display_height;
     int brutus_width, brutus_height;
+    int LED_GUI_width, LED_GUI_height;
     int LED_width, LED_height;
 } Settings;
 
+typedef struct
+{
+    int active_tool; // Enum
+    int active_color[16];
+} Tools;
+
+enum tools
+{
+    tool_none,
+    tool_paint_brush,
+    tool_eraser,
+    tool_color_picker
+};
+
+typedef struct
+{
+    LED LEDs[32][16];
+} Animation_Frame;
+
+typedef struct
+{
+    int animation_mode;
+    int active_frame;
+    int active_color[16];
+    Animation_Frame frames[32];
+} User_Animation;
 
 typedef struct
 {
@@ -72,7 +97,20 @@ typedef struct
     int current_animation;
 
     float frame_rate;
+
+    // User
+    User_Animation user_animation;
 } Animation;
+
+// Animation helpers
+enum animations
+{
+    // Some pre-made animation
+    no_animation,
+    test_animation,
+    ax_plus_b_anim,
+    gradient_anim
+};
 
 // State: Contains everything.
 typedef struct
@@ -88,6 +126,9 @@ typedef struct
     // GUI
     GUI_Element GUI;
     Mouse mouse;
+
+    // User tools
+    Tools user_tools;
 
     // Settings
     Settings settings;

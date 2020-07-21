@@ -31,9 +31,9 @@ void init_LEDs(State *state)
             state->LEDs[row][column].b = light_gray[2];
             state->LEDs[row][column].a = light_gray[3];
 
-            x += state->square.w;
+            x += state->LEDs[0]->w;
         }
-        y += state->square.h;
+        y += state->LEDs[0]->h;
     }
 
     // Fill a transposed 2D array with LEDs, in case the user wants to turn
@@ -49,7 +49,15 @@ void init_animation(State *state)
     state->animation.playing = 0;
     state->animation.current_frame = 0;
     state->animation.current_animation = no_animation;
-    state->animation.frame_rate = 8.333333;
+    state->animation.frame_rate = 8.333333; // 120 FPS
+
+    // User animation
+    state->animation.user_animation.animation_mode = 0;
+    state->animation.user_animation.active_frame = 0;
+    state->animation.user_animation.active_color[0] = 255;
+    state->animation.user_animation.active_color[1] = 0;
+    state->animation.user_animation.active_color[2] = 0;
+    state->animation.user_animation.active_color[3] = 255;
 }
 
 void init_square(State *state)
@@ -62,29 +70,33 @@ void init_square(State *state)
 
 void init_GUI(State *state, SDL_Renderer *renderer)
 { 
-    // GUI rect
-    state->GUI.x = 0 + state->settings.brutus_width * state->settings.LED_width;
+    int standard_button_width = 120;
+    int standard_button_height = 32;
+    /**************
+    Main GUI
+    **************/
+    state->GUI.x = 0 + state->settings.LED_GUI_width;
     state->GUI.y = 0;
-    state->GUI.w = state->settings.LED_width * state->settings.brutus_width;
-    state->GUI.h = state->settings.LED_height * state->settings.brutus_height;
+    state->GUI.w = state->settings.display_width - state->settings.LED_GUI_width;
+    state->GUI.h = state->settings.display_height;
 
-    // Stop animation button rect
-    state->GUI.stop_button.w = 32;
-    state->GUI.stop_button.h = 32;
-    state->GUI.stop_button.x = state->settings.display_width - state->GUI.stop_button.w;
-    state->GUI.stop_button.y = 0;
+    // Stop animation button
+    state->GUI.button_stop.w = 32;
+    state->GUI.button_stop.h = 32;
+    state->GUI.button_stop.x = state->settings.display_width - state->GUI.button_stop.w;
+    state->GUI.button_stop.y = 0;
 
-    // Animation 1 button rect
-    state->GUI.animation_1_button.x = state->GUI.x + 40;
-    state->GUI.animation_1_button.y = state->GUI.y + 40;
-    state->GUI.animation_1_button.w = 120;
-    state->GUI.animation_1_button.h = 32;
+    // Animation 1 button
+    state->GUI.button_animation_1.x = state->GUI.x + 40;
+    state->GUI.button_animation_1.y = state->GUI.y + 40;
+    state->GUI.button_animation_1.w = standard_button_width;
+    state->GUI.button_animation_1.h = standard_button_height;
 
     // Randomize button
-    state->GUI.randomize_button.x = state->GUI.x + 40;
-    state->GUI.randomize_button.y = (state->GUI.y + 40) * 2;
-    state->GUI.randomize_button.w = 120;
-    state->GUI.randomize_button.h = 32;
+    state->GUI.button_animation_2.x = state->GUI.x + 40;
+    state->GUI.button_animation_2.y = (state->GUI.y + 40) * 2;
+    state->GUI.button_animation_2.w = 120;
+    state->GUI.button_animation_2.h = 32;
 
     // Button image
     SDL_Surface *image_surface = NULL;
@@ -97,16 +109,67 @@ void init_GUI(State *state, SDL_Renderer *renderer)
     printf("Creating texture from surface\n");
     // for this next function, it will not work to pass state->renderer, you need to pass renderer
     // (thus the need for it to be a parameter in init_GUI())
-    state->GUI.animation_1_button.image_texture = SDL_CreateTextureFromSurface(renderer, image_surface);
+    state->GUI.button_animation_1.image_texture = SDL_CreateTextureFromSurface(renderer, image_surface);
     SDL_FreeSurface(image_surface);
+
+    /**************
+    User animations GUI element
+    **************/
+
+    int margin = 8;
+    int margin_small = 4;
+
+    // GUI element rect
+    state->GUI.GUI_elem_user_animation.w = state->GUI.w;
+    state->GUI.GUI_elem_user_animation.h = state->GUI.h / 4;
+    state->GUI.GUI_elem_user_animation.x = state->GUI.x;
+    state->GUI.GUI_elem_user_animation.y = state->GUI.h - state->GUI.GUI_elem_user_animation.h;
+
+    // Buttons
+
+    // New animation button
+    state->GUI.button_new_animation.x = state->GUI.GUI_elem_user_animation.x + margin;
+    state->GUI.button_new_animation.y = state->GUI.GUI_elem_user_animation.y + margin;
+    state->GUI.button_new_animation.w = standard_button_width;
+    state->GUI.button_new_animation.h = standard_button_height;
+
+    // Save animation button
+    state->GUI.button_save_animation.x = state->GUI.button_new_animation.x + 
+                                         state->GUI.button_new_animation.w +
+                                         margin;
+    state->GUI.button_save_animation.y = state->GUI.button_new_animation.y;
+    state->GUI.button_save_animation.w = standard_button_width;
+    state->GUI.button_save_animation.h = standard_button_height;
+
+    // Timeline
+    int max_frames = 32; // For now
+    int timeline_y = state->GUI.GUI_elem_user_animation.y + 64;
+    int timeline_x = state->GUI.x + margin;
+    int frame_button_width = 12;
+    int frame_button_height = 32;
+    for (int i = 0; i < max_frames; ++i)
+    {
+        state->GUI.button_animation_frame[i].w = frame_button_width;
+        state->GUI.button_animation_frame[i].h = frame_button_height;
+        state->GUI.button_animation_frame[i].x = timeline_x + i * (frame_button_width + margin_small);
+        state->GUI.button_animation_frame[i].y = timeline_y;
+    }
 }
 
 void init_settings(State *state)
 {
     state->settings.brutus_width = 16;
     state->settings.brutus_height = 32;
-    state->settings.display_width = 640;
+    state->settings.display_width = 960;
     state->settings.display_height = 640;
-    state->settings.LED_width = (state->settings.display_width / 2) / state->settings.brutus_width;
-    state->settings.LED_height = state->settings.display_height / state->settings.brutus_height;
+    state->settings.LED_GUI_width =  320;
+    state->settings.LED_GUI_height = state->settings.display_height;
+    state->settings.LED_width = state->settings.LED_GUI_width / state->settings.brutus_width; // == 10
+    state->settings.LED_height = state->settings.LED_GUI_height / state->settings.brutus_height; // == 10
+    printf("Led width, height: %d %d\n", state->settings.LED_width, state->settings.LED_height);
+}
+
+void init_user_tools(State *state)
+{
+    state->user_tools.active_tool = tool_none;
 }
