@@ -8,6 +8,7 @@
 
 #include "headers.h"
 #include "graphics.h"
+#include "file_io.h"
 
 /*
 
@@ -283,7 +284,7 @@ void click(State *state)
                               state->GUI.button_animation_1.h))
     {
         stop_animation(state, 1);
-        start_animation(state, test_animation);
+        play_animation_from_file(state, "animations/this_is_a_file.txt");
     }
 
     // Animation 2 button
@@ -313,7 +314,13 @@ void click(State *state)
     }
 
     // Save animation button
-
+    if (mouse_hovering(state, state->GUI.button_save_animation.x,
+                              state->GUI.button_save_animation.y,
+                              state->GUI.button_save_animation.w,
+                              state->GUI.button_save_animation.h))
+    {
+        save_animation(state, "this_is_a_file");
+    }
 
     // Timeline buttons
     if (state->animation.user_animation.animation_mode == 1)
