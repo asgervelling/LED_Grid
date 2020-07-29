@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "structs.h"
+#include "graphics.h"
 
 void file_write_test()
 {
@@ -13,9 +14,8 @@ void file_write_test()
     fclose(f);
 }
 
-void append_LED_to_file(char filename[], int r, int g, int b, int a)
+void append_LED_to_file(char filename[], int frame, int row, int column, int r, int g, int b, int a)
 {
-    // Filename max 50 characters
     char path[100] = "animations/";
     strcat(path, filename);
     strcat(path, ".txt");
@@ -23,7 +23,7 @@ void append_LED_to_file(char filename[], int r, int g, int b, int a)
     FILE *f;
 
     f = fopen(path, "a");
-    fprintf(f, "(%d, %d, %d, %d)\n", r, g, b, a);
+    fprintf(f, "frame: %d row: %d column: %d R: %d G: %d B: %d A: %d\n", frame, row, column, r, g, b, a);
     fclose(f);
 }
 
@@ -44,35 +44,22 @@ void save_animation(State *state, char filename[])
     // Append all frames' info to a text file
     for (int frame = 0; frame < 32; ++frame)
     {
-        f = fopen(path, "a");
-        fputs(f, "f\n");
-        fclose(f);
         for (int row = 0; row < 32; ++row)
         {
-            f = fopen(path, "a");
-            fprintf(f, "r");
-            fclose(f);
             for (int column = 0; column < 16; ++column)
             {
                 
                 append_LED_to_file(filename,
+                                frame,
+                                row,
+                                column,
                                 state->animation.user_animation.frames[frame].LEDs[row][column].r,
                                 state->animation.user_animation.frames[frame].LEDs[row][column].g,
                                 state->animation.user_animation.frames[frame].LEDs[row][column].b,
                                 state->animation.user_animation.frames[frame].LEDs[row][column].a);
             }
-            f = fopen(path, "a");
-            fputs("\n", f);
-            fclose(f);
         }
-        f = fopen(path, "a");
-        fputs("\n", f);
-        fclose(f);
     }
-    f = fopen(path, "a");
-    // File terminator
-    fputs("x", f);
-    fclose(f);
 }
 
 void load_LED_from_file(State *state, int frame, int row, int col, int r, int g, int b, int a)
@@ -83,93 +70,38 @@ void load_LED_from_file(State *state, int frame, int row, int col, int r, int g,
     state->animation.user_animation.frames[frame].LEDs[row][col].a = a;
 }
 
-void play_animation_from_file(State *state, char path[])
+void test_that_loading_works(State *state)
 {
-    // Read a monstrous text file
-    FILE *f = fopen(path, "r");
-    char *buffer;
-    long numbytes;
+    for (int i = 0; i < 15; ++i)
+    {
+        printf("From frame 4, row 4: %d %d %d %d\n", state->animation.user_animation.frames[4].LEDs[3][i].r,
+                                                    state->animation.user_animation.frames[4].LEDs[3][i].g,
+                                                    state->animation.user_animation.frames[4].LEDs[3][i].b,
+                                                    state->animation.user_animation.frames[4].LEDs[3][i].a);
+    }
+}
 
+void load_animation_from_file(State *state, char path[])
+{
+    FILE *f = fopen(path, "r");
+    
     if(f == NULL)
     {
         perror("Error in opening file\n");
         return;
     }
-    
-    fseek(f, 0L, SEEK_END);
-    numbytes = ftell(f);
-    fseek(f, 0L, SEEK_SET);
-    
-    buffer = (char*)calloc(numbytes, sizeof(char));
-    if(buffer == NULL)
+
+    int frame, row, column, r, g, b, a;
+    while(fscanf(f, "frame: %d row: %d column: %d R: %d G: %d B: %d A: %d\n", &frame, &row, &column, &r, &g, &b, &a) != EOF)
     {
-        printf("Memory error\n");
+        load_LED_from_file(state, frame, row, column, r, g, b, a);
     }
-    fread(buffer, sizeof(char), numbytes, f);
+    
+    test_that_loading_works(state);
+
+    // Display the currently active frame
+    show_animation_frame(state);
+
     fclose(f);
-
-    // Test read
-    // printf("The file contains this text\n\n%s\n", buffer);
-    
-
-    // Parse the text
-    char c;
-    int i = 0;
-    size_t length = strlen(buffer);
-
-    int frame = 0;
-    int row = 0;
-    int column = 0;
-    int reading_rgba = 0;
-    int rgba_index = 0;
-    int rgba[16];
-    int rgba_buffer[4];
-    while(1)
-    {
-        c = buffer[i];
-        // Get frame, row and column number
-        if (c == 'f')
-        {
-            ++frame;
-        }
-        if (c == 'r')
-        {
-            ++row;
-        }
-        if (c == '(')
-        {
-            ++column;
-            int j = 0;
-            while (c != ')')
-            {
-                if (c == ',')
-                {
-                    // CONTINUE FROM HERE
-                    if (rgba_index == 0)
-                    {
-                        rgba_index = 3;
-                    }
-                    ++rgba_index;
-                }
-                else
-                {
-                    printf("the number is %c\n", c);
-                }
-
-                ++i;
-                c = buffer[i];
-                
-            }
-        }
-        
-        
-        
-
-        ++i;
-        if (i > length)
-        {
-            break;
-        }
-    }
-    free(buffer);
 }
+

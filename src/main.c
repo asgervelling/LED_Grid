@@ -245,7 +245,17 @@ void render_GUI(State *state, SDL_Renderer *renderer)
             SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
         }
         SDL_RenderFillRect(renderer, &button_frame_rect);
-    } 
+    }
+
+    // Play button
+    SDL_Rect dest = {state->GUI.button_play.x,
+                     state->GUI.button_play.y,
+                     state->GUI.button_play.w,
+                     state->GUI.button_play.h};
+    SDL_RenderCopy(renderer,
+                   state->GUI.button_play.image_texture,
+                   NULL,
+                   &dest);
 }
 
 /*************
@@ -284,7 +294,8 @@ void click(State *state)
                               state->GUI.button_animation_1.h))
     {
         stop_animation(state, 1);
-        play_animation_from_file(state, "animations/this_is_a_file.txt");
+        init_LEDs(state);
+        load_animation_from_file(state, "animations/this_is_a_file.txt");
     }
 
     // Animation 2 button
@@ -336,6 +347,17 @@ void click(State *state)
                 show_animation_frame(state);
             }
         }
+    }
+
+    // Play button
+    if (mouse_hovering(state,
+                       state->GUI.button_play.x,
+                       state->GUI.button_play.y,
+                       state->GUI.button_play.w,
+                       state->GUI.button_play.h))
+    {
+        stop_animation(state, 1);
+        start_animation(state, user_animation);
     }
 
 }
@@ -460,6 +482,7 @@ int main(int argc, char* argv[])
 
     // Clean up
     SDL_DestroyTexture(state.GUI.button_animation_1.image_texture);
+    SDL_DestroyTexture(state.GUI.button_play.image_texture);
     IMG_Quit();
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);

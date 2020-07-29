@@ -93,7 +93,6 @@ void do_test_animation(State *state)
 
     set_default_all_LEDs(state);
     set_rgba(state->animation.animation_frame, state->animation.animation_frame, blue[0], blue[1], blue[2], blue[3], state);
-    printf("anim frame: %d\n", state->animation.animation_frame);
     
 }
 
@@ -127,6 +126,7 @@ void do_current_animation(State *state, int animation) // Called every frame
     void do_test_animation(State *state);
     void ax_plus_b_animation(State *state, int a, int b);
     void gradient_animation(State *state);
+    void animation_custom(State *state);
 
     if (state->animation.playing == 0)
     {
@@ -145,7 +145,6 @@ void do_current_animation(State *state, int animation) // Called every frame
     {
         state->animation.animation_frame += 1;
     }
-    // printf("Frame: %d\nAnimation frame: %d\n\n", state->animation.current_frame, state->animation.animation_frame);
 
     // The animations are currently stored in an enum
     if (state->animation.current_animation == test_animation)
@@ -162,6 +161,11 @@ void do_current_animation(State *state, int animation) // Called every frame
         gradient_animation(state);
     }
 
+    // User animation
+    if (state->animation.current_animation == user_animation)
+    {
+        animation_custom(state);
+    }
 }
 
 void ax_plus_b_animation(State *state, int a, int b)
@@ -229,7 +233,6 @@ User animation
 
 void store_single_LED(State *state, int LED_row, int LED_column, int frame)
 {
-    int color = state->animation.user_animation.active_color;
     // Essentially a 3D array
     state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].r = state->animation.user_animation.active_color[0];
     state->animation.user_animation.frames[frame].LEDs[LED_row][LED_column].g = state->animation.user_animation.active_color[1];
@@ -260,7 +263,6 @@ void init_new_animation(State *state, int frames)
             }
         }
     }
-    printf("initialized new anim\n");
 }
 
 void show_animation_frame(State *state)
@@ -278,6 +280,24 @@ void show_animation_frame(State *state)
                      state);
         }
     }
+    
+}
+
+void animation_custom(State *state)
+{
+    int max_frames = 31; // For now
+    if (state->animation.current_frame > max_frames)
+    {
+        stop_animation(state, 0);
+        return;
+    }
+    
+
+    // Set active user frame to the current anim frame
+    state->animation.user_animation.active_frame = state->animation.current_frame;
+    show_animation_frame(state);
+
+    printf("DEBUG: Anim frame: %d\n", state->animation.current_frame);
 }
 
 void store_animation_frame(State *state)

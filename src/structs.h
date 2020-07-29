@@ -46,8 +46,9 @@ typedef struct
     Button button_new_animation;
     Button button_save_animation;
 
-    // User timeline
-    Button button_animation_frame[32]; // Timeline
+    // Timeline
+    Button button_animation_frame[32];
+    Button button_play;
 } GUI_Element;
 
 typedef struct
@@ -105,6 +106,7 @@ typedef struct
 // Animation helpers
 enum animations
 {
+    user_animation,
     // Some pre-made animation
     no_animation,
     test_animation,

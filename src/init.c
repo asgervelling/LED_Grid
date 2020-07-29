@@ -106,9 +106,6 @@ void init_GUI(State *state, SDL_Renderer *renderer)
         printf("Cannot find image\n");
         SDL_Quit();
     }
-    printf("Creating texture from surface\n");
-    // for this next function, it will not work to pass state->renderer, you need to pass renderer
-    // (thus the need for it to be a parameter in init_GUI())
     state->GUI.button_animation_1.image_texture = SDL_CreateTextureFromSurface(renderer, image_surface);
     SDL_FreeSurface(image_surface);
 
@@ -154,6 +151,21 @@ void init_GUI(State *state, SDL_Renderer *renderer)
         state->GUI.button_animation_frame[i].x = timeline_x + i * (frame_button_width + margin_small);
         state->GUI.button_animation_frame[i].y = timeline_y;
     }
+
+    // Play button (faces the wrong way lol)
+    state->GUI.button_play.x = timeline_x;
+    state->GUI.button_play.y = timeline_y + frame_button_height + margin;
+    state->GUI.button_play.w = 32;
+    state->GUI.button_play.h = 32;
+    SDL_Surface *play_btn_surface = NULL;
+    play_btn_surface = IMG_Load("assets/GUI/button_play.png");
+    if(play_btn_surface == NULL)
+    {
+        printf("Cannot find image\n");
+        SDL_Quit();
+    }
+    state->GUI.button_play.image_texture = SDL_CreateTextureFromSurface(renderer, play_btn_surface);
+    SDL_FreeSurface(play_btn_surface);
 }
 
 void init_settings(State *state)

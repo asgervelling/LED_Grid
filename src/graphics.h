@@ -21,6 +21,7 @@ void store_single_LED(State *state, int LED_row, int LED_column, int frame);
 void init_new_animation(State *state, int frames);
 void show_animation_frame(State *state);
 void store_animation_frame(State *state);
+void animation_custom(State *state);
 
 
 #endif
