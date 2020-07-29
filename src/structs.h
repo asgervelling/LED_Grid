@@ -34,6 +34,18 @@ typedef struct
 
 typedef struct
 {
+    int x, y, w, h;
+    
+    // For hover effects
+    int anim_frame;
+    int anim_speed;
+    int anim_length;
+
+    Button menu_items[7];
+} Button_Dropdown;
+
+typedef struct
+{
     float x, y, w, h;
 
     // Buttons
@@ -49,6 +61,9 @@ typedef struct
     // Timeline
     Button button_animation_frame[32];
     Button button_play;
+
+    // Dropdown menu
+    Button_Dropdown test_dropdown;
 } GUI_Element;
 
 typedef struct
@@ -103,15 +118,25 @@ typedef struct
     User_Animation user_animation;
 } Animation;
 
+enum animation_helpers
+{
+    LED_anim,
+    GUI_anim
+};
+
 // Animation helpers
 enum animations
 {
     user_animation,
-    // Some pre-made animation
+    // Some pre-made animations
     no_animation,
     test_animation,
     ax_plus_b_anim,
-    gradient_anim
+    gradient_anim,
+
+    // Animations for GUI elements
+    dropdown_animation_in,
+    dropdown_animation_out
 };
 
 // State: Contains everything.
@@ -124,6 +149,7 @@ typedef struct
 
     // Animation
     Animation animation;
+    Animation GUI_animation;
 
     // GUI
     GUI_Element GUI;

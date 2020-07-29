@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+
 #include "structs.h"
 
 
@@ -12,10 +13,19 @@ Animation
 
 #define LED_NO 512
 
-void start_animation(State *state, int animation_enum)
+void start_animation(State *state, int animation_enum, int animation_object)
 {
     state->animation.playing = 1;
-    state->animation.current_animation = animation_enum;
+    state->GUI_animation.playing = 1;
+    if (animation_object == LED_anim)
+    {
+        printf("Starting animation for %d\n", animation_object);
+        state->animation.current_animation = animation_enum;
+        return;
+    }
+    printf("Starting animation for %d\n", animation_object);
+
+    state->GUI_animation.current_animation = animation_enum;
 }
 
 void stop_animation(State *state, int clear_screen)
@@ -118,53 +128,6 @@ void set_default_all_LEDs(State *state)
         {
             set_rgba(row, column, light_gray[0], light_gray[1], light_gray[2], light_gray[3], state);
         }
-    }
-}
-
-void do_current_animation(State *state, int animation) // Called every frame
-{
-    void do_test_animation(State *state);
-    void ax_plus_b_animation(State *state, int a, int b);
-    void gradient_animation(State *state);
-    void animation_custom(State *state);
-
-    if (state->animation.playing == 0)
-    {
-        state->animation.animation_frame = 0;
-        state->animation.current_frame = 0;
-        return;
-    }
-
-    // Set the speed of the animation
-    int frame_length_ms = 1;
-    state->animation.current_animation = animation;
-    state->animation.current_frame += 1;
-
-    // Set animation speed according to frame length
-    if (state->animation.current_frame % frame_length_ms == 0)
-    {
-        state->animation.animation_frame += 1;
-    }
-
-    // The animations are currently stored in an enum
-    if (state->animation.current_animation == test_animation)
-    {
-        // do_test_animation(state);
-        one_by_one_animation(state);
-    }
-    if (state->animation.current_animation == ax_plus_b_anim)
-    {
-        ax_plus_b_animation(state, 2, 4);
-    }
-    if (state->animation.current_animation == gradient_anim)
-    {
-        gradient_animation(state);
-    }
-
-    // User animation
-    if (state->animation.current_animation == user_animation)
-    {
-        animation_custom(state);
     }
 }
 
@@ -286,21 +249,122 @@ void show_animation_frame(State *state)
 void animation_custom(State *state)
 {
     int max_frames = 31; // For now
-    if (state->animation.current_frame > max_frames)
+    if (state->animation.user_animation.active_frame > max_frames)
     {
         stop_animation(state, 0);
         return;
     }
     
-
+    
     // Set active user frame to the current anim frame
     state->animation.user_animation.active_frame = state->animation.current_frame;
     show_animation_frame(state);
-
-    printf("DEBUG: Anim frame: %d\n", state->animation.current_frame);
 }
 
-void store_animation_frame(State *state)
+void do_dropdown_animation_in(State *state)
 {
-    printf("Active frame: %d\n", state->animation.user_animation.active_frame);
+    int anim_length = state->GUI.test_dropdown.anim_length;
+    if (state->GUI.test_dropdown.anim_frame >= anim_length)
+    {
+        return;
+    }
+    state->GUI.test_dropdown.anim_frame += 1;
+    state->GUI.test_dropdown.h += state->GUI.test_dropdown.anim_speed;
+}
+
+void do_dropdown_animation_out(State *state)
+{
+    if (state->GUI.test_dropdown.anim_frame == 0)
+    {
+        return;
+    }
+    state->GUI.test_dropdown.anim_frame -= 1;
+    state->GUI.test_dropdown.h -= state->GUI.test_dropdown.anim_speed;
+}
+
+/******************
+ * The function that plays the current animation
+ * ***************/
+
+void do_current_animation(State *state, int animation) // Called every frame
+{
+    void do_test_animation(State *state);
+    void ax_plus_b_animation(State *state, int a, int b);
+    void gradient_animation(State *state);
+    void animation_custom(State *state);
+
+    if (state->animation.playing == 0)
+    {
+        printf("LED Playing == false\n");
+        state->animation.animation_frame = 0;
+        state->animation.current_frame = 0;
+        return;
+    }
+    printf("LED Playing == true\n");
+
+    // Set the speed of the animation
+    int frame_length_ms = 1;
+    state->animation.current_animation = animation;
+    state->animation.current_frame += 1;
+
+    // Set animation speed according to frame length
+    if (state->animation.current_frame % frame_length_ms == 0)
+    {
+        state->animation.animation_frame += 1;
+    }
+
+    // The animations are currently stored in an enum
+    if (state->animation.current_animation == test_animation)
+    {
+        // do_test_animation(state);
+        one_by_one_animation(state);
+    }
+    if (state->animation.current_animation == ax_plus_b_anim)
+    {
+        ax_plus_b_animation(state, 2, 4);
+    }
+    if (state->animation.current_animation == gradient_anim)
+    {
+        gradient_animation(state);
+    }
+
+    // User animation
+    if (state->animation.current_animation == user_animation)
+    {
+
+        animation_custom(state);
+    }
+
+    // Test dropdown animation
+    if (state->animation.current_animation == dropdown_animation_in)
+    {
+        do_dropdown_animation_in(state);
+    }
+
+    if (state->animation.current_animation == dropdown_animation_out)
+    {
+        do_dropdown_animation_out(state);
+    }
+}
+
+void do_GUI_animation(State *state, int animation)
+{
+    printf("GUI anim playing\n");
+    if (state->GUI_animation.playing == 0)
+    {
+        printf("GUI anim not playing\n");
+        state->GUI_animation.animation_frame = 0;
+        state->GUI_animation.current_frame = 0;
+        return;
+    }
+
+    state->GUI_animation.current_frame += 1;
+    state->GUI_animation.current_animation = animation;
+    int frame_length_ms = 1;
+
+    // Set animation speed according to frame length
+    if (state->GUI_animation.current_frame % frame_length_ms == 0)
+    {
+        state->GUI_animation.animation_frame += 1;
+    }
 }

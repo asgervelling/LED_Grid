@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "graphics.h"
 
+#define LEN(arr) ((int) (sizeof (arr) / sizeof (arr)[0]))
 
 void init_LEDs(State *state)
 {
@@ -45,12 +46,20 @@ void init_LEDs(State *state)
 
 void init_animation(State *state)
 {
-    // Initialize animation helper
+    /***
+    Create seperate animation objects for the LED screen and the GUI
+    ***/
     state->animation.playing = 0;
     state->animation.current_frame = 0;
     state->animation.current_animation = no_animation;
-    state->animation.frame_rate = 8.333333; // 120 FPS
+    state->animation.frame_rate = 8.333333; // ~120 FPS
 
+    // GUI Animation
+    state->GUI_animation.playing = 0;
+    state->GUI_animation.current_frame = 0;
+    state->GUI_animation.current_animation = no_animation;
+    state->GUI_animation.frame_rate = 8.333333;
+    
     // User animation
     state->animation.user_animation.animation_mode = 0;
     state->animation.user_animation.active_frame = 0;
@@ -58,6 +67,7 @@ void init_animation(State *state)
     state->animation.user_animation.active_color[1] = 0;
     state->animation.user_animation.active_color[2] = 0;
     state->animation.user_animation.active_color[3] = 255;
+
 }
 
 void init_square(State *state)
@@ -123,6 +133,37 @@ void init_GUI(State *state, SDL_Renderer *renderer)
     state->GUI.GUI_elem_user_animation.y = state->GUI.h - state->GUI.GUI_elem_user_animation.h;
 
     // Buttons
+
+    // Test dropdown menu
+    int dropdown_h = 32;
+    int dropdown_w = 132;
+    int dropdown_y = 180;
+
+    state->GUI.test_dropdown.x = 600;
+    state->GUI.test_dropdown.y = dropdown_y;
+    state->GUI.test_dropdown.w = dropdown_w;
+    state->GUI.test_dropdown.h = dropdown_h;
+    for (int i = 0; i < LEN(state->GUI.test_dropdown.menu_items); ++i)
+    {
+        state->GUI.test_dropdown.menu_items[i].x = 600;
+        state->GUI.test_dropdown.menu_items[i].y = dropdown_y + dropdown_h * i;
+        state->GUI.test_dropdown.menu_items[i].w = dropdown_w;
+        state->GUI.test_dropdown.menu_items[i].h = dropdown_h;
+    }
+    for (int i = 0; i < LEN(state->GUI.test_dropdown.menu_items); ++i)
+    {
+        printf("menu item %d:   w: %d   h: %d   y: %d\n", i,
+                                                          state->GUI.test_dropdown.menu_items[i].w,
+                                                          state->GUI.test_dropdown.menu_items[i].h,
+                                                          state->GUI.test_dropdown.menu_items[i].y);
+    }
+
+
+    state->GUI.test_dropdown.anim_frame = 0;
+    state->GUI.test_dropdown.anim_length = 32;
+    state->GUI.test_dropdown.anim_speed = (state->GUI.test_dropdown.menu_items[0].h 
+                                           * LEN(state->GUI.test_dropdown.menu_items)
+                                           / state->GUI.test_dropdown.anim_length);
 
     // New animation button
     state->GUI.button_new_animation.x = state->GUI.GUI_elem_user_animation.x + margin;

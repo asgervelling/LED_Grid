@@ -6,5 +6,6 @@
 #include "graphics.h"
 
 void render_GUI(State *state, SDL_Renderer *renderer);
+void on_hover(State *state);
 
 #endif

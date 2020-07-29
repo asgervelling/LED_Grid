@@ -42,6 +42,174 @@ void load_program(State *state, SDL_Renderer *renderer)
     init_new_animation(state, 32);
 }
 
+/*************
+Control
+*************/
+
+int mouse_hovering(State *state, int bx, int by, int bw, int bh)
+{
+    int ax = state->mouse.x;
+    int ay = state->mouse.y;
+
+    if (ax >= bx &&
+        ax <= bx + bw &&
+        ay >= by &&
+        ay <= by + bh)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+void click_LED(State *state)
+{
+    // This function lets you hold down the left mouse button
+    if (state->animation.user_animation.animation_mode == 0)
+    {
+        return;
+    }
+
+    // User should only be able to use this function when clicking the LEDs.
+    if (mouse_hovering(state, state->GUI.x,
+                              state->GUI.y,
+                              state->GUI.w,
+                              state->GUI.h))
+    {
+        return;
+    }
+
+    state->animation.user_animation.active_color[0] = 255;
+    state->animation.user_animation.active_color[1] = 0;
+    state->animation.user_animation.active_color[2] = 0;
+    state->animation.user_animation.active_color[3] = 255;
+    // Flip x and y
+    int LED_row = state->mouse.y / state->settings.LED_width;
+    int LED_col = state->mouse.x / state->settings.LED_height;
+    set_rgba(LED_row,
+             LED_col,
+             state->animation.user_animation.active_color[0],
+             state->animation.user_animation.active_color[1],
+             state->animation.user_animation.active_color[2],
+             state->animation.user_animation.active_color[3],
+             state);
+    store_single_LED(state,
+                     LED_row,
+                     LED_col,
+                     state->animation.user_animation.active_frame);
+}
+
+int button_pressed(State *state, Button button)
+{
+    if (mouse_hovering(state,
+                       button.x,
+                       button.y,
+                       button.w,
+                       button.h))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+
+
+void click(State *state)
+{
+    void do_test_animation(State *state);
+    int mouse_hovering(State *state, int bx, int by, int bw, int bh);
+    void start_animation(State *state, int animation_enum, int animation_object);
+    void stop_animation(State *state, int clear_screen);
+    void click_LED(State *state);
+
+    // Stop animation button
+    /*
+    if (mouse_hovering(state, state->GUI.button_stop.x,
+                              state->GUI.button_stop.y,
+                              state->GUI.button_stop.w,
+                              state->GUI.button_stop.h))
+    {
+        stop_animation(state, 1);
+    }
+    */
+
+    if (button_pressed(state, state->GUI.button_stop))
+    {
+        stop_animation(state, 1);
+    }
+
+    // "Animation 1"-button
+    if (button_pressed(state, state->GUI.button_animation_1))
+    {
+        stop_animation(state, 1);
+        init_LEDs(state);
+        load_animation_from_file(state, "animations/this_is_a_file.txt");
+    }
+
+    // Animation 2 button
+    if (button_pressed(state, state->GUI.button_animation_2))
+    {
+        stop_animation(state, 1);
+        start_animation(state, gradient_anim, LED_anim);
+    }
+
+    // New animation button
+    if (button_pressed(state, state->GUI.button_new_animation))
+    {
+        if (state->animation.user_animation.animation_mode == 0)
+        {
+            state->animation.user_animation.animation_mode = 1;
+        }
+        else
+        {
+            state->animation.user_animation.animation_mode = 0;
+        }
+    }
+
+    // Save animation button
+    if (button_pressed(state, state->GUI.button_save_animation))
+    {
+        save_animation(state, "this_is_a_file");
+    }
+
+    // Timeline buttons
+    if (state->animation.user_animation.animation_mode == 1)
+    {
+        for (int i = 0; i < 32; ++i)
+        {
+            if (button_pressed(state, state->GUI.button_animation_frame[i]))
+            {
+                state->animation.user_animation.active_frame = i;
+                show_animation_frame(state);
+            }
+        }
+    }
+
+    // Play button
+    if (button_pressed(state, state->GUI.button_play))
+    {
+        stop_animation(state, 1);
+        start_animation(state, user_animation, LED_anim);
+    }
+
+}
+
+void on_hover(State *state)
+{
+    // Test dropdown menu
+    if (mouse_hovering(state,
+                       state->GUI.test_dropdown.x,
+                       state->GUI.test_dropdown.y,
+                       state->GUI.test_dropdown.w,
+                       state->GUI.test_dropdown.h))
+    {
+        start_animation(state, dropdown_animation_in, GUI_anim);
+    }
+    else
+    {
+        start_animation(state, dropdown_animation_out, GUI_anim);
+    }
+}
+
 int listen_for_events(SDL_Window *window, State *state, float dt)
 {
     void click(State *state);
@@ -78,7 +246,7 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
                             set_rgba_random_all_LEDs(state);
                         break;
                         case SDLK_a:
-                            start_animation(state, test_animation);
+                            start_animation(state, test_animation, LED_anim);
                         break;
                     }
                 }
@@ -103,6 +271,14 @@ int listen_for_events(SDL_Window *window, State *state, float dt)
             break;
         }
     }
+
+    // Mouse state
+    SDL_PumpEvents();
+    if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+        click_LED(state);
+    }
+    
+
     return done;
 }
 
@@ -113,6 +289,11 @@ void process(State *state, float dt)
 
     // Animation
     do_current_animation(state, state->animation.current_animation);
+    do_GUI_animation(state, state->GUI_animation.current_animation);
+
+    printf("LED Anim frame: %d\nGUI Anim frame: %d\n\n", state->animation.current_frame, state->GUI_animation.current_frame);
+
+    on_hover(state);
 }
 
 void render(SDL_Renderer *renderer, State *state)
@@ -164,6 +345,13 @@ void render_GUI(State *state, SDL_Renderer *renderer)
 
     /* Buttons */
 
+    // Test dropdown
+    SDL_SetRenderDrawColor(renderer, light_gray[0], light_gray[1], light_gray[2], light_gray[3]);
+    SDL_Rect dropdown_rect = {state->GUI.test_dropdown.x,
+                              state->GUI.test_dropdown.y,
+                              state->GUI.test_dropdown.w,
+                              state->GUI.test_dropdown.h};
+    SDL_RenderFillRect(renderer, &dropdown_rect);
 
     // Stop button
     SDL_SetRenderDrawColor(renderer, 150, 0, 0, 255);
@@ -256,151 +444,6 @@ void render_GUI(State *state, SDL_Renderer *renderer)
                    state->GUI.button_play.image_texture,
                    NULL,
                    &dest);
-}
-
-/*************
-Control
-*************/
-
-void click(State *state)
-{
-    void do_test_animation(State *state);
-    int mouse_hovering(State *state, int bx, int by, int bw, int bh);
-    void start_animation(State *state, int animation_enum);
-    void stop_animation(State *state, int clear_screen);
-    void click_LED(State *state);
-
-    if (!mouse_hovering(state, state->GUI.x,
-                              state->GUI.y,
-                              state->GUI.w,
-                              state->GUI.h))
-    {
-        click_LED(state);
-    }
-
-    // Stop animation button
-    if (mouse_hovering(state, state->GUI.button_stop.x,
-                              state->GUI.button_stop.y,
-                              state->GUI.button_stop.w,
-                              state->GUI.button_stop.h))
-    {
-        stop_animation(state, 1);
-    }
-
-    // "Animation 1"-button
-    if (mouse_hovering(state, state->GUI.button_animation_1.x,
-                              state->GUI.button_animation_1.y,
-                              state->GUI.button_animation_1.w,
-                              state->GUI.button_animation_1.h))
-    {
-        stop_animation(state, 1);
-        init_LEDs(state);
-        load_animation_from_file(state, "animations/this_is_a_file.txt");
-    }
-
-    // Animation 2 button
-    if (mouse_hovering(state, state->GUI.button_animation_2.x,
-                              state->GUI.button_animation_2.y,
-                              state->GUI.button_animation_2.w,
-                              state->GUI.button_animation_2.h))
-    {
-        stop_animation(state, 1);
-        start_animation(state, gradient_anim);
-    }
-
-    // New animation button
-    if (mouse_hovering(state, state->GUI.button_new_animation.x,
-                              state->GUI.button_new_animation.y,
-                              state->GUI.button_new_animation.w,
-                              state->GUI.button_new_animation.h))
-    {
-        if (state->animation.user_animation.animation_mode == 0)
-        {
-            state->animation.user_animation.animation_mode = 1;
-        }
-        else
-        {
-            state->animation.user_animation.animation_mode = 0;
-        }
-    }
-
-    // Save animation button
-    if (mouse_hovering(state, state->GUI.button_save_animation.x,
-                              state->GUI.button_save_animation.y,
-                              state->GUI.button_save_animation.w,
-                              state->GUI.button_save_animation.h))
-    {
-        save_animation(state, "this_is_a_file");
-    }
-
-    // Timeline buttons
-    if (state->animation.user_animation.animation_mode == 1)
-    {
-        for (int i = 0; i < 32; ++i)
-        {
-            if (mouse_hovering(state, state->GUI.button_animation_frame[i].x,
-                                    state->GUI.button_animation_frame[i].y,
-                                    state->GUI.button_animation_frame[i].w,
-                                    state->GUI.button_animation_frame[i].h))
-            {
-                state->animation.user_animation.active_frame = i;
-                show_animation_frame(state);
-            }
-        }
-    }
-
-    // Play button
-    if (mouse_hovering(state,
-                       state->GUI.button_play.x,
-                       state->GUI.button_play.y,
-                       state->GUI.button_play.w,
-                       state->GUI.button_play.h))
-    {
-        stop_animation(state, 1);
-        start_animation(state, user_animation);
-    }
-
-}
-
-int mouse_hovering(State *state, int bx, int by, int bw, int bh)
-{
-    int ax = state->mouse.x;
-    int ay = state->mouse.y;
-
-    if (ax >= bx &&
-        ax <= bx + bw &&
-        ay >= by &&
-        ay <= by + bh)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-void click_LED(State *state)
-{
-    if (state->animation.user_animation.animation_mode == 0)
-    {
-        return;
-    }
-    state->animation.user_animation.active_color[0] = 255;
-    state->animation.user_animation.active_color[1] = 0;
-    state->animation.user_animation.active_color[2] = 0;
-    state->animation.user_animation.active_color[3] = 255;
-    // Flip x and y
-    int LED_row = state->mouse.y / state->settings.LED_width;
-    int LED_col = state->mouse.x / state->settings.LED_height;
-    set_rgba(LED_row,
-             LED_col,
-             state->animation.user_animation.active_color[0],
-             state->animation.user_animation.active_color[1],
-             state->animation.user_animation.active_color[2],
-             state->animation.user_animation.active_color[3],
-             state);
-    store_single_LED(state,
-                     LED_row,
-                     LED_col,
-                     state->animation.user_animation.active_frame);
 }
 
 /*************

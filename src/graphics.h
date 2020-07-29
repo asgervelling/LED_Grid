@@ -3,7 +3,7 @@
 
 #include "structs.h"
 
-void start_animation(State *state, int animation_enum);
+void start_animation(State *state, int animation_enum, int animation_object);
 void stop_animation(State *state, int clear_screen);
 void set_rgba(int row, int col, int r, int g, int b, int a, State *state);
 void set_rgba_random(int row, int col, State *state);
@@ -20,8 +20,11 @@ void gradient_animation(State *state);
 void store_single_LED(State *state, int LED_row, int LED_column, int frame);
 void init_new_animation(State *state, int frames);
 void show_animation_frame(State *state);
-void store_animation_frame(State *state);
 void animation_custom(State *state);
+
+// GUI animations
+void do_GUI_animation(State *state, int animation);
+void do_dropdown_animation_in(State *state);
 
 
 #endif
